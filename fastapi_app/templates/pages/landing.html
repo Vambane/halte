@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Halte: MyCiTi, UCT Jammie shuttle and Metrorail timetables and journey planning for Cape Town">
   <meta property="og:site_name" content="Halte">
   <meta property="og:title" content="Halte">
@@ -10,6 +10,7 @@
   <title>Halte</title>
   <link rel="stylesheet" href="/static/css/tokens.css?v={{ asset_v }}">
   <link rel="stylesheet" href="/static/css/landing.css?v={{ asset_v }}">
+  <link rel="stylesheet" href="/static/css/ios.css?v={{ asset_v }}">
 </head>
 <body class="landing">
   {# Fixed yellow nav #}
@@ -253,5 +254,6 @@
       </div>
     </div>
   </footer>
+  {% include 'components/tabbar.html' %}
 </body>
 </html>

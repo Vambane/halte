@@ -1,0 +1,318 @@
+/* ============================================================
+   Halte iOS layer
+   ============================================================
+   Loaded last, after tokens.css plus either base.css and
+   components.css (app pages) or landing.css (the landing page).
+   It keeps the brand (butter yellow, ink, charcoal, sage,
+   Cabinet Grotesk and Satoshi) and adds the iOS feel:
+
+   - a light grey grouped ground with white, softly shadowed cells
+   - iOS radii (16px cells, 14px buttons and inputs, 7px badges)
+   - iOS segmented controls: grey track, ink thumb with yellow text
+   - grouped section labels and hairline separators
+   - a bottom tab bar on phones (components/tabbar.html)
+
+   The page's main object (the search form, the primary journey
+   card) keeps its ink border and hard shadow, so the brutalist
+   accent still marks "this is the thing to use".
+
+   Every value comes from tokens.css (see the "iOS layer" block).
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Ground and cells (app pages)
+   ------------------------------------------------------------ */
+body:not(.landing) {
+  background-color: var(--ios-ground);
+}
+
+.card {
+  background: var(--ios-surface);
+  border-color: transparent;
+  border-radius: var(--ios-radius-cell);
+  box-shadow: var(--ios-shadow-soft);
+}
+
+.card--interactive:hover {
+  transform: none;
+  box-shadow: var(--ios-shadow-soft), 0 0 0 2px var(--ink);
+}
+
+/* The main object on a page keeps the brutalist edge. */
+.card--search,
+.card--elevated {
+  border-color: var(--ink);
+  box-shadow: var(--shadow-std);
+}
+
+.card-header {
+  border-bottom: var(--ios-hairline);
+}
+
+.departure-item {
+  border: none;
+  border-radius: 10px;
+  background: var(--ios-ground);
+}
+
+.journey-viz {
+  border-radius: var(--ios-radius-btn);
+}
+
+.route-badge {
+  border-radius: var(--ios-radius-badge);
+}
+
+/* ------------------------------------------------------------
+   Grouped section labels (iOS "FOOTNOTE CAPS" headers)
+   ------------------------------------------------------------ */
+.form-label,
+.recent-label,
+.locate-chips__label {
+  font-size: var(--ios-label-caps);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+}
+
+/* ------------------------------------------------------------
+   Inputs
+   ------------------------------------------------------------ */
+.form-input,
+.combobox-input {
+  border-radius: var(--ios-radius-btn);
+}
+
+/* ------------------------------------------------------------
+   Segmented controls: day type, result tabs, stop day links
+   ------------------------------------------------------------ */
+.segmented,
+.tab-bar,
+.tabs {
+  background: var(--ios-track);
+  border: none;
+  border-radius: var(--ios-radius-ctl);
+  box-shadow: none;
+  padding: 2px;
+}
+
+.segmented-label,
+.tab-btn,
+.tab {
+  border-radius: var(--ios-radius-seg);
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.segmented-label:hover,
+.tab-btn:hover,
+.tab:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.segmented-input:checked + .segmented-label,
+.tab-btn.active,
+.tab-btn.active:hover,
+.tab.active,
+.tab.active:hover {
+  background: var(--ink);
+  color: var(--yellow);
+}
+
+/* ------------------------------------------------------------
+   Buttons: rounder; the primary action is a flat ink slab
+   ------------------------------------------------------------ */
+.btn {
+  border-radius: var(--ios-radius-btn);
+}
+
+.btn-primary,
+a.btn-primary {
+  box-shadow: none;
+}
+
+.btn-primary:hover,
+.btn-primary:active {
+  transform: none;
+  box-shadow: none;
+  background: var(--gold-hover);
+}
+
+.btn-swap,
+.btn-reverse {
+  border-radius: var(--radius-full);
+  background: var(--yellow);
+}
+
+/* Buttons that live inside a cell sit flat on it (no hard shadow),
+   like iOS inline buttons. Hover darkens instead of pressing in. */
+.btn-swap,
+.btn-reverse,
+.btn-locate,
+.btn-trip-preview,
+.btn-trip-preview:hover,
+.btn-trip-preview:active {
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-trip-preview {
+  border-radius: var(--radius-full);
+}
+
+/* ------------------------------------------------------------
+   Trust strip and alerts: soft cells
+   ------------------------------------------------------------ */
+/* A grouped caption cell on the grey ground: no ink edge, so the
+   legal lines stay quiet and never compete with departure times. */
+.trust-strip {
+  border-left: none;
+  border-radius: var(--ios-radius-cell);
+  background: var(--ios-surface);
+}
+
+.alert {
+  border-radius: var(--ios-radius-cell);
+}
+
+/* ------------------------------------------------------------
+   Landing page: same radii, soft feature cells
+   ------------------------------------------------------------ */
+.landing .landing-btn,
+.landing .landing-compare__after,
+.landing .landing-final {
+  border-radius: var(--ios-radius-btn);
+}
+
+.landing .landing-mockup {
+  border-radius: 28px;
+}
+
+.landing .landing-feature,
+.landing .landing-bento__card {
+  border-radius: var(--ios-radius-cell);
+}
+
+.landing .landing-feature__icon {
+  border-radius: 9px;
+}
+
+/* Buttons and the eyebrow pill sit flat (iOS); the hero mockup,
+   the "With Halte" panel and the final call to action keep the
+   hard shadow as the page's brutalist accents. */
+.landing .landing-pill,
+.landing .landing-btn,
+.landing .landing-btn:hover,
+.landing .landing-btn:active {
+  box-shadow: none;
+  transform: none;
+}
+
+.landing .landing-btn:hover {
+  filter: brightness(0.94);
+}
+
+/* Feature and audience cards become soft grouped cells. */
+.landing .landing-feature,
+.landing .landing-bento__card {
+  border-color: transparent;
+  box-shadow: var(--ios-shadow-soft);
+}
+
+/* ------------------------------------------------------------
+   Phone tab bar (components/tabbar.html)
+   Hidden from 768px up, where the header nav pills take over.
+   On phones the header pills hide and the tab bar is fixed to
+   the bottom, clear of the home indicator (safe-area inset).
+   ------------------------------------------------------------ */
+.tabbar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    height: calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px));
+    padding: 6px var(--sp-6) env(safe-area-inset-bottom, 0px);
+    background: var(--tabbar-bg);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-top: var(--ios-hairline);
+  }
+
+  .tabbar__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 3px;
+    min-height: 44px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-decoration: none;
+  }
+
+  .tabbar__item:hover {
+    text-decoration: none;
+    color: var(--ink);
+  }
+
+  .tabbar__icon {
+    width: 58px;
+    height: 30px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--duration-fast) ease;
+  }
+
+  .tabbar__item[aria-current="page"] {
+    color: var(--ink);
+  }
+
+  .tabbar__item[aria-current="page"] .tabbar__icon {
+    background: var(--yellow);
+  }
+
+  /* Keep page content and footers clear of the fixed bar. */
+  body {
+    padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .header .nav-pills,
+  .landing-nav__links {
+    display: none;
+  }
+
+  /* iOS segmented controls span the width on phones. */
+  .segmented,
+  .tab-bar,
+  .tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+
+  .segmented-option,
+  .tab-btn,
+  .tab {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .segmented-label,
+  .tab-btn,
+  .tab {
+    padding-inline: var(--sp-2);
+  }
+}
