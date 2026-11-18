@@ -148,6 +148,24 @@
   /* --- layout --- */
   --container-max:   1152px;     /* 1120px content + 16px gutters, matches landing */
   --header-height:   64px;
+
+  /* --- iOS layer (ios.css) ---
+     Soft grouped surfaces on a light grey ground, iOS radii,
+     hairline separators and a phone tab bar. The brand rules
+     still hold: yellow is a fill under ink text, or text on ink. */
+  --ios-ground:        var(--paper-2);            /* grouped background */
+  --ios-surface:       var(--paper);              /* grouped cells, cards */
+  --ios-track:         rgba(0, 0, 0, 0.08);       /* segmented control track */
+  --ios-hairline:      0.5px solid rgba(0, 0, 0, 0.12);
+  --ios-shadow-soft:   0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
+  --ios-radius-cell:   16px;     /* cards and grouped lists */
+  --ios-radius-ctl:    9px;      /* segmented track */
+  --ios-radius-seg:    7px;      /* segmented thumb */
+  --ios-radius-btn:    14px;     /* buttons and inputs */
+  --ios-radius-badge:  7px;      /* route badges */
+  --ios-label-caps:    0.8125rem;  /* 13px grouped section header */
+  --tabbar-height:     64px;     /* phone tab bar, excluding the safe area */
+  --tabbar-bg:         rgba(255, 255, 255, 0.92);
 }
 
 /* ---- Reduced motion preference ---- */

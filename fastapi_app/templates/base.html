@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   {%- set app_name = "Halte" -%}
   {%- set app_disclaimer = "Halte is an independent app, not affiliated with the City of Cape Town, MyCiTi, the University of Cape Town or PRASA (Metrorail)." -%}
   <meta name="description" content="Halte: MyCiTi, UCT Jammie shuttle and Metrorail timetables and journey planning for Cape Town">
@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="/static/css/tokens.css?v={{ asset_v }}">
   <link rel="stylesheet" href="/static/css/base.css?v={{ asset_v }}">
   <link rel="stylesheet" href="/static/css/components.css?v={{ asset_v }}">
+  <link rel="stylesheet" href="/static/css/ios.css?v={{ asset_v }}">
 
   {% block extra_css %}{% endblock %}
 </head>
@@ -104,6 +105,9 @@
       </div>
     </div>
   </footer>
+
+  <!-- ====== PHONE TAB BAR (ios.css) ====== -->
+  {% include 'components/tabbar.html' %}
 
   <!-- Honest wake -->
   <script>
