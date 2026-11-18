@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # Application settings
     log_level: str = "INFO"
     reload: bool = False
+    enable_docs: bool = False  # /docs, /redoc, /openapi.json (local dev only)
 
     # Database
     db_path: str = str(Path(__file__).parent.parent / "data" / "myciti.duckdb")

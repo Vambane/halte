@@ -109,15 +109,8 @@
   <!-- ====== PHONE TAB BAR (ios.css) ====== -->
   {% include 'components/tabbar.html' %}
 
-  <!-- Honest wake -->
-  <script>
-  (function() {
-    var wake = document.getElementById('wake-banner');
-    if (wake && document.body.getAttribute('data-db-ready') === 'true') {
-      wake.hidden = true;
-    }
-  })();
-  </script>
+  <!-- Honest wake (external file: the CSP allows no inline script) -->
+  <script src="/static/js/wake.js?v={{ asset_v }}"></script>
 
   {% block scripts %}{% endblock %}
 </body>

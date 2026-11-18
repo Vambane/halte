@@ -16,6 +16,7 @@ from journey import clock_time
 from .config import settings
 from .dependencies import close_connection_pool, get_connection, init_connection_pool, is_pool_ready
 from .routes import api, journey, landing, search, stop, system_map
+from .security import HSTS_VALUE, build_csp, is_https, security_headers
 from .services.metrorail_notes import badge_label
 from .services.trust import get_scraped_at_display, get_scraped_at_raw
 from .services.uct_notes import uct_notes
@@ -48,6 +49,11 @@ app = FastAPI(
     description="Journey planning and timetable system for MyCiTi buses in Cape Town",
     version=APP_VERSION,
     lifespan=lifespan,
+    # Interactive API docs are off in production (they list every endpoint
+    # and parameter). Set ENABLE_DOCS=true locally to get /docs back.
+    docs_url="/docs" if settings.enable_docs else None,
+    redoc_url="/redoc" if settings.enable_docs else None,
+    openapi_url="/openapi.json" if settings.enable_docs else None,
 )
 
 # Mount static files
@@ -88,6 +94,20 @@ async def cache_control_headers(request, call_next):
     if request.url.path.startswith("/static/") or ctype.startswith("text/html"):
         response.headers["Cache-Control"] = "no-cache"
     return response
+
+SECURITY_HEADERS = security_headers(build_csp())
+
+
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    """CSP, anti-framing, nosniff and friends on every response (see security.py)."""
+    response = await call_next(request)
+    for name, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(name, value)
+    if is_https(request):
+        response.headers.setdefault("Strict-Transport-Security", HSTS_VALUE)
+    return response
+
 
 # Make templates available globally
 app.state.templates = templates
@@ -159,4 +179,5 @@ if __name__ == "__main__":
         port=8000,
         reload=settings.reload,
         log_level=settings.log_level.lower(),
+        server_header=False,
     )

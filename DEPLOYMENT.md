@@ -10,7 +10,7 @@ Cold start must **not** run a full PDF ETL. The process rebuilds DuckDB from com
 
 | Item | Value |
 |------|--------|
-| Start command | `uvicorn fastapi_app.main:app --host 0.0.0.0 --port $PORT` |
+| Start command | `uvicorn fastapi_app.main:app --host 0.0.0.0 --port $PORT --no-server-header` |
 | Snapshot path | `data/snapshot/*.parquet` (routes, stops, departures, timetables, scrape_log, …) |
 | Runtime DB | `data/myciti.duckdb` — **rebuilt on boot** by `fastapi_app/dependencies.py` → `_ensure_database` when missing |
 | Fail-loud | If the `.duckdb` file and the snapshot directory are both missing, startup raises `FileNotFoundError` — do **not** serve empty boards |
@@ -31,7 +31,7 @@ Cold start must **not** run a full PDF ETL. The process rebuilds DuckDB from com
 1. Sign up: https://railway.app → Login with GitHub  
 2. New Project → Deploy from GitHub repo → `mycity-bus-schedule`  
 3. Start command (if not auto-detected):  
-   `uvicorn fastapi_app.main:app --host 0.0.0.0 --port $PORT`  
+   `uvicorn fastapi_app.main:app --host 0.0.0.0 --port $PORT --no-server-header`  
 4. Ensure `data/snapshot/*.parquet` is in the deployed tree (committed in repo).  
 5. Optional env: `ESP_API_KEY` for live load-shedding stage.  
 6. Settings → Generate Domain. Probe `GET /health` until `status=ok` and `db_ready=true`.
@@ -43,9 +43,10 @@ Cold start must **not** run a full PDF ETL. The process rebuilds DuckDB from com
 `render.yaml` is present for a free-tier Web Service. Same start command and snapshot rules as above.
 
 1. https://render.com → New → Web Service → connect the GitHub repo  
-2. Confirm start: `uvicorn fastapi_app.main:app --host 0.0.0.0 --port $PORT`  
+2. Confirm start: `uvicorn fastapi_app.main:app --host 0.0.0.0 --port $PORT --no-server-header`  
 3. Free tier spins down after idle — first request is a cold start; `/health` and the Jinja shell (honest wake banner) should respond without a blank page once the process is up  
-4. Optional: `ESP_API_KEY`
+4. Optional: `ESP_API_KEY`. `ENABLE_DOCS=true` turns /docs, /redoc and /openapi.json back on (off by default).
+   If the service was created in the dashboard rather than from `render.yaml`, update its start command there too
 
 ---
 
