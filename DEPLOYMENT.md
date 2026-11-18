@@ -34,6 +34,8 @@ Cold start must **not** run a full PDF ETL. The process rebuilds DuckDB from com
    `uvicorn fastapi_app.main:app --host 0.0.0.0 --port $PORT`  
 4. Ensure `data/snapshot/*.parquet` is in the deployed tree (committed in repo).  
 5. Optional env: `ESP_API_KEY` for live load-shedding stage.  
+6. Optional env: `ENABLE_DOCS=true` turns /docs, /redoc and /openapi.json back on (off in production).  
+7. If the service was created in the dashboard, set its start command to match `render.yaml` (it ends in `--no-server-header`).  
 6. Settings → Generate Domain. Probe `GET /health` until `status=ok` and `db_ready=true`.
 
 ---
