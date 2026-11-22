@@ -17,6 +17,14 @@ class Settings(BaseSettings):
     # "Report a wrong time" link in the footer; hidden until this is set.
     feedback_email: str = ""
 
+    # Host allowlist (see fastapi_app/security.py).
+    # Comma-separated Host names the app answers. Empty = any host, except on
+    # Render (RENDER is set there), where it defaults to the public domain.
+    allowed_hosts: str = ""
+
+    # /.well-known/security.txt
+    security_contact: str = "mailto:security@halte.co.za"
+
     # Database
     db_path: str = str(Path(__file__).parent.parent / "data" / "myciti.duckdb")
 

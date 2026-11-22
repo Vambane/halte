@@ -252,7 +252,11 @@ def search_page(
             current_time_str = window.at if window.mode == DEPART else "00:00:00"
             time_context = f"{window.mode}={window.at_hhmm}"
 
-        logger.info(f"Journey search: {from_stop} → {to_stop}, {day_type}, {time_context}")
+        # %r, not an f-string: stop names come from the query string, and
+        # repr() turns a newline into "\n" so it cannot start a forged log line.
+        logger.info(
+            "Journey search: %r → %r, %r, %s", from_stop, to_stop, day_type, time_context
+        )
 
         # Get block numbers for load shedding assessment (if available in DB)
         from_block = None

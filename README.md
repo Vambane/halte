@@ -237,6 +237,14 @@ uvicorn fastapi_app.main:app --host 0.0.0.0 --port $PORT
 
 On a cold start Halte rebuilds `data/myciti.duckdb` from the snapshot if it's missing. It never scrapes on boot, and a missing snapshot fails loudly rather than serving empty boards. A **Render** Blueprint (`render.yaml`) is included for a free web service; free instances nap when idle, so the first visit after a quiet spell is a bit slow. Full details in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
+### Security setup 🛡️
+
+halte.co.za's DNS lives at GoDaddy and points straight at Render; there's no CDN of our own in front. Render runs every service behind its own edge (which is Cloudflare, hence the `server: cloudflare` header), and that edge adds `x-render-origin-server` and `rndr-id`. We can't remove those without putting a CDN of our own in front; they only say the site is hosted on Render.
+
+On Render the app answers only `halte.co.za` and `www.halte.co.za`, so the default `*.onrender.com` address returns 403. The uvicorn `Server` banner is off via `UVICORN_SERVER_HEADER=false`. Everything else is in [`SECURITY.md`](SECURITY.md).
+
+Check the live site any time with `tools/check_live_security.sh`.
+
 ## Project map 🗂️
 
 ```

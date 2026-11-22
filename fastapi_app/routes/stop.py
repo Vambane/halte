@@ -181,7 +181,9 @@ def stop_view(
         current_time = now.strftime("%H:%M:%S")
         today = now.date()
 
-        logger.info(f"Stop view: {stop_name}, day_type={day_type}, time={current_time}")
+        # %r, not an f-string: the stop name comes from the URL, and repr()
+        # turns a newline into "\n" so it cannot start a forged log line.
+        logger.info("Stop view: %r, day_type=%r, time=%s", stop_name, day_type, current_time)
 
         # Get load shedding stage
         stage, stage_source = get_effective_stage()

@@ -21,7 +21,7 @@
       {{ journey.day_type|capitalize }} · {{ journey.dep|clock }}–{{ journey.arr|clock }}
       {% if journey.duration %} · {{ journey.duration }}{% endif %}
     </p>
-    <div class="route-chain" style="margin-top: var(--sp-3);">
+    <div class="route-chain u-mt-3">
       {% for rid in journey.route_ids %}
       <span class="route-badge {% if rid.startswith('UCT') %}uct{% elif rid.startswith('MR-') %}rail{% elif rid.startswith('T') %}trunk{% elif rid.startswith('D') %}direct{% else %}area{% endif %}">
         {% if journey.kind == 'direct' and journey.route_name and loop.first %}{{ journey.route_name }}{% else %}{{ rid|badge_label }}{% endif %}
@@ -32,7 +32,7 @@
       {% endfor %}
     </div>
     {% if journey.kind == 'direct' and journey.direction %}
-    <p class="journey-direction" style="margin-top: var(--sp-2);">{{ journey.direction }}</p>
+    <p class="journey-direction u-mt-2">{{ journey.direction }}</p>
     {% endif %}
     {% if journey.via %}
     <p class="journey-via">Via {{ journey.via|join(', ') }}</p>
@@ -43,7 +43,7 @@
 
   <div class="card journey-schematic-card">
     <div class="card-header">
-      <h2 style="margin:0; font-size: var(--text-md);">All stops</h2>
+      <h2 class="u-m-0 u-text-md">All stops</h2>
     </div>
 
     {% if journey.kind == 'direct' %}
@@ -51,9 +51,9 @@
       {% for stop in journey.stops %}
       <div class="journey-stop-row">
         <div class="stop-line-segment {% if loop.first %}stop-line-segment--first{% elif loop.last %}stop-line-segment--last{% endif %}"
-             style="--route-color: {{ journey.route_color }};"></div>
+             data-route-color="{{ journey.route_color }}"></div>
         <div class="stop-dot {% if loop.first %}stop-dot--origin{% elif loop.last %}stop-dot--destination{% else %}stop-dot--intermediate{% endif %} stop-dot--page"
-             style="--route-color: {{ journey.route_color }};"></div>
+             data-route-color="{{ journey.route_color }}"></div>
         <span class="stop-name stop-name--page">{{ stop }}</span>
         {% if loop.first %}
         <span class="stop-time">{{ journey.dep|clock }}</span>
@@ -71,15 +71,15 @@
         {% for stop in stops %}
         <div class="journey-stop-row">
           <div class="stop-line-segment {% if loop.first and outer.first %}stop-line-segment--first{% elif loop.last and outer.last %}stop-line-segment--last{% endif %}"
-               style="--route-color: {{ leg_color }};"></div>
+               data-route-color="{{ leg_color }}"></div>
           {% if loop.first and not outer.first %}
           <div class="stop-dot stop-dot--transfer stop-dot--page"></div>
           {% elif loop.first and outer.first %}
-          <div class="stop-dot stop-dot--origin stop-dot--page" style="--route-color: {{ leg_color }};"></div>
+          <div class="stop-dot stop-dot--origin stop-dot--page" data-route-color="{{ leg_color }}"></div>
           {% elif loop.last and outer.last %}
-          <div class="stop-dot stop-dot--destination stop-dot--page" style="--route-color: {{ leg_color }};"></div>
+          <div class="stop-dot stop-dot--destination stop-dot--page" data-route-color="{{ leg_color }}"></div>
           {% else %}
-          <div class="stop-dot stop-dot--intermediate stop-dot--page" style="--route-color: {{ leg_color }};"></div>
+          <div class="stop-dot stop-dot--intermediate stop-dot--page" data-route-color="{{ leg_color }}"></div>
           {% endif %}
           <span class="stop-name stop-name--page">{{ stop }}</span>
           {% if loop.first and outer.first %}

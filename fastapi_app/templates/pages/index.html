@@ -12,10 +12,10 @@
   </section>
 
   <!-- ====== RECENT SEARCHES ====== -->
-  <div id="recent-searches" class="recent-searches" style="display: none;"></div>
+  <div id="recent-searches" hidden class="recent-searches"></div>
 
   <!-- ====== SEARCH CARD ====== -->
-  <div class="card card--search" style="margin-bottom: var(--sp-8);">
+  <div class="card card--search u-mb-8">
     <form action="/search" method="get" id="search-form" role="search" aria-label="Journey search">
 
       <!-- Row 1: From / To -->
@@ -107,7 +107,7 @@
       </div>
 
       <!-- Row 2: Service type / Network / Date -->
-      <div class="form-grid form-grid--2col" style="margin-top: var(--sp-4);">
+      <div class="form-grid form-grid--2col u-mt-4">
         <!-- Day type segmented control -->
         <div class="form-group">
           <span class="form-label" id="label-day">Service</span>
@@ -159,7 +159,7 @@
       </div>
 
       <!-- Row 2b: When (leave now / depart at / arrive by) -->
-      <div class="form-grid form-grid--2col" style="margin-top: var(--sp-4);">
+      <div class="form-grid form-grid--2col u-mt-4">
         <div class="form-group">
           <span class="form-label" id="label-when">When</span>
           <div class="when-row">
@@ -205,7 +205,7 @@
       </div>
 
       <!-- Row 3: Actions -->
-      <div class="form-actions" style="margin-top: var(--sp-6);">
+      <div class="form-actions u-mt-6">
         <button type="submit" class="btn btn-primary" id="search-btn">
           Search Journeys
         </button>
@@ -248,9 +248,9 @@
     <!-- Results header -->
     <div class="results-header">
       <div class="results-route">
-        <h2 style="margin-bottom: 0;">{{ results.from_stop }}</h2>
+        <h2 class="u-mb-0">{{ results.from_stop }}</h2>
         <span class="results-arrow" aria-hidden="true">&#8594;</span>
-        <h2 style="margin-bottom: 0;">{{ results.to_stop }}</h2>
+        <h2 class="u-mb-0">{{ results.to_stop }}</h2>
       </div>
       <p class="results-meta">
         {% if results.when == 'arrive' %}
