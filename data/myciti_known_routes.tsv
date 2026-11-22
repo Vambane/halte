@@ -1,0 +1,52 @@
+# Every MyCiTi route ever seen on myciti.org.za (route_id<TAB>route_name).
+# The timetable downloads page sometimes leaves routes out, so the scraper
+# also tries each route here and skips any whose PDF is gone. New routes
+# found on the page are appended by etl/scrape_myciti.py.
+route_id	route_name
+101	101 – Vredehoek - Gardens - Civic Centre (clockwise)
+102	102 – Salt River Rail - Walmer Estate - Civic Centre
+103	103 – Oranjezicht - Gardens - Civic Centre
+104	104 – Oranjezicht - Gardens - Adderley - Waterfront
+105	105 – Sea Point - Fresnaye - Civic Centre
+106	106 – Camps Bay (clockwise) - Civic Centre
+107	107 – Camps Bay (anticlockwise) -  Civic Centre
+108	108 – Hangberg - Hout Bay Harbour - Sea Point
+109	109 – Hout Bay - Imizamo Yethu - Sea point
+111	111 – Vredehoek - Gardens - Civic Centre (anti-clockwise)
+113	113 – Upper Kloof Street - Adderley - Waterfront
+118	118 – Hangberg - Imizamo Yethu - Sea Point - Adderley
+213	213 – Sunningdale - Parklands - Table View - Sunningdale (clockwise)
+214A	214A – Parklands - Table View
+214B	214B – Table View - Melkbosch Village
+214C	214C – Table View - Melkbosstrand - Duynefontein
+215	215 – Sunningdale - Gie Road - Wood
+216	216 – Big Bay - Wood Drive - Wood
+223	223 – Sunningdale - West Beach - Table View - Sunningdale (anticlockwise)
+231	231 – Atlantis Industria East - Atlantis
+233	233 – Saxonsea - Atlantis
+234	234 – Mamre (Crown) - Atlantis
+235	235 – Pella - Atlantis
+236	236 – Sherwood - Atlantis
+237	237 – Robinvale - Atlantis
+241	241 – Atlantis - Avondale - Beacon Hill
+242	242 – Atlantis - Protea Park - Sherwood
+243	243 – Atlantis - Pella - Mamre
+244	244 – Avondale - Protea Park - Atlantis Industria West - Atlantis
+245	245 – Saxonsea - Goode Hoop - Atlantis
+246	246 – Mamre (Frans) - Atlantis
+260	260 – Summer Greens - Woodbridge Island
+261	261 – Century City Rail - Omuramba - Salt River - Adderley
+262	262 – Summer Greens - Century City - Woodbridge Island
+264	264 – Century City - Century City Rail
+D01	D01 – Khayelitsha East - Civic Centre
+D02	D02 – Khayelitsha West - Civic Centre
+D03	D03 – Mitchells Plain East - Civic Centre
+D04	D04 – Kapteinsklip - Mitchells Plain Town Centre - Civic Centre
+D05	D05 – Dunoon - Parklands - Table View - Civic Centre
+D08	D08 – Dunoon - Montague Gardens - Century City
+T01	T01 – Dunoon - Table View - Civic Centre - Waterfront
+T01X	T01X – Dunoon - Table View - Civic Centre
+T02	T02 – Civic Centre - Table View - Atlantis
+T02X	T02X – Atlantis - Table View - Civic Centre
+T03	T03 – Atlantis - Melkbosstrand - Table View - Century City
+T04	T04 – Dunoon - Omuramba - Century City

@@ -99,6 +99,16 @@ python3 run_etl.py --inspect        # peek at the DB without scraping
 
 Each operator is loaded independently, so refreshing one never touches the others. Stop the app first: DuckDB allows one writer at a time. The ETL rebuilds the database **and** re-exports the snapshot. Commit the updated `data/snapshot/*.parquet` files so deploys pick them up.
 
+**Every Monday this happens by itself.** The *Refresh timetables* GitHub Action (`.github/workflows/refresh-timetables.yml`) scrapes all three networks, refuses the result if any network lost more than 10% of its routes or departures (`tools/check_snapshot.py`), runs the tests on the new data and opens a pull request. Merge it to deploy. It needs *Settings → Actions → General → Allow GitHub Actions to create and approve pull requests*; without that it fails with a link to open the PR by hand. Run it any time from the Actions tab.
+
+MyCiTi's downloads page sometimes leaves routes out (it has listed 34, 40 and 47). `data/myciti_known_routes.tsv` remembers every route ever seen; the scraper tries them all and only drops a route when its PDF is gone.
+
+## Launch kit 📣
+
+- **Share previews and icons:** `tools/make_brand_images.py` draws the link-preview image and app icons from the brand fonts and colours. Re-run it after a brand change.
+- **Feedback:** set `FEEDBACK_EMAIL` on Render to show a "Report a wrong time" link in the footer (it carries the page the rider was on).
+- **Usage counts, no trackers:** every page view writes one anonymous line (`usage event=journey_search operator=both day=weekday source=reddit`): no IP, no browser details, no stop names. Copy the lines from Render's Logs and run `python3 tools/usage_report.py logs.txt` for views per day, page, source and network. Tag shared links with `?utm_source=reddit` (or `whatsapp`, `uct`, ...) to see which channel works; `/` keeps those links on the landing page.
+
 ## How it works ⚙️
 
 ```

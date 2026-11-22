@@ -1,0 +1,80 @@
+name: Refresh timetables
+
+# Every Monday 03:00 Cape Town time (01:00 UTC), and on demand from the
+# Actions tab. Scrapes MyCiTi, UCT and Metrorail, checks nothing went
+# missing, runs the tests on the new data, and opens a pull request with
+# the new snapshot. Merging the PR deploys it (Render auto-deploys main).
+on:
+  schedule:
+    - cron: "0 1 * * 1"
+  workflow_dispatch:
+
+# Needs to push a branch and open a PR. Also needs the repository setting
+# Settings -> Actions -> General -> "Allow GitHub Actions to create and
+# approve pull requests".
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: refresh-timetables
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: pip
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+    - name: Keep the committed snapshot for comparison
+      run: cp -r data/snapshot "$RUNNER_TEMP/snapshot-before"
+    - name: Build the committed database
+      # run_etl.py loads into data/myciti.duckdb, replacing one network at a
+      # time, so start from the committed data rather than an empty file.
+      run: |
+        python -c "from fastapi_app.dependencies import _ensure_database; _ensure_database()"
+    - name: Scrape and load every network
+      run: python run_etl.py --all
+    - name: Refuse a snapshot that lost routes or departures
+      run: python tools/check_snapshot.py "$RUNNER_TEMP/snapshot-before" data/snapshot
+    - name: Run the tests on the new data
+      run: pytest -q
+    - name: Open a pull request
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        if git diff --quiet -- data/snapshot; then
+          echo "Snapshot unchanged; nothing to propose."
+          exit 0
+        fi
+        day=$(date -u +%Y-%m-%d)
+        branch="data/refresh-$day"
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git switch -c "$branch"
+        git add data/snapshot
+        git commit -m "data: refresh timetables ($day)"
+        git push --force origin "$branch"
+        report=$(python tools/check_snapshot.py "$RUNNER_TEMP/snapshot-before" data/snapshot || true)
+        body=$(printf 'Weekly scrape of MyCiTi, UCT and Metrorail.\n\nRoutes and departures per network (before -> after):\n\n```\n%s\n```\n\nTests passed on the new data. Merging deploys it.' "$report")
+        if [ -n "$(gh pr list --head "$branch" --json number --jq '.[].number')" ]; then
+          echo "PR for $branch already open; its branch was updated."
+        elif ! gh pr create --base main --head "$branch" \
+            --title "Refresh timetables ($day)" --body "$body"; then
+          # Usually the repo setting above is off. Fail loudly (GitHub emails
+          # the owner) and leave a link to open the PR by hand.
+          url="${{ github.server_url }}/${{ github.repository }}/compare/main...$branch"
+          echo "Could not open the PR. Open it here: $url" | tee -a "$GITHUB_STEP_SUMMARY"
+          exit 1
+        fi

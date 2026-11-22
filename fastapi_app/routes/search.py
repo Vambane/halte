@@ -35,7 +35,7 @@ from fastapi_app.services.trip_window import (
     parse_window,
 )
 from fastapi_app.services.trust import trust_context
-from fastapi_app.services.uct_validity import drop_expired, uct_expiry_state
+from fastapi_app.services.uct_validity import drop_expired, serves_uct, uct_expiry_state
 # Import core business logic
 from journey import _to_minutes, clock_time, find_connections, find_transfer_connections
 from system_map import get_route_colors
@@ -191,6 +191,8 @@ def search_page(
     uct_stale_warning = None
     if operator in ("uct", "both"):
         expired_uct, uct_stale_warning = uct_expiry_state(conn)
+        if operator == "both" and not serves_uct(conn, [from_stop, to_stop]):
+            uct_stale_warning = None  # expired routes stay hidden; no banner
 
     # Metrorail: say why trains are missing (Sunday/holiday) or may be stale
     rail_notice = None

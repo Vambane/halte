@@ -10,6 +10,7 @@
   <meta property="og:title" content="{{ app_name }}">
   <meta property="og:description" content="Halte: MyCiTi, UCT Jammie shuttle and Metrorail timetables and journey planning for Cape Town">
   <title>{% block title %}Halte{% endblock %}</title>
+{% include 'components/head_meta.html' %}
 
   <!-- Design system -->
   <link rel="stylesheet" href="/static/css/tokens.css?v={{ asset_v }}">
@@ -100,6 +101,10 @@
           Load shedding via <a href="https://eskomsepush.gumroad.com/l/api" target="_blank" rel="noopener">EskomSePush</a>
           &middot;
           Unofficial community timetable
+          {%- if feedback_href %}
+          &middot;
+          <a href="{{ feedback_href }}&amp;body={{ ('Page: ' ~ request.url) | urlencode }}">Report a wrong time</a>
+          {%- endif %}
         </p>
         <p class="footer-sources footer-disclaimer">{{ app_disclaimer }}</p>
       </div>

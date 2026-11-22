@@ -21,6 +21,11 @@ APP_DISCLAIMER = (
 )
 
 
+def _is_tracking(param: str) -> bool:
+    """True for share-link tracking parameters that carry no search."""
+    return param.startswith("utm_") or param in ("ref", "fbclid", "gclid")
+
+
 def _marquee_routes(conn: duckdb.DuckDBPyConnection) -> list[str]:
     """Real route labels from DB for the marquee (Jinja-escaped at render)."""
     rows = conn.execute(
@@ -45,10 +50,14 @@ async def landing_page(
     request: Request,
     conn: duckdb.DuckDBPyConnection = Depends(get_connection),
 ):
-    """Landing at `/`. Any query string → 301 to `/search` (same query)."""
+    """Landing at `/`. A search query string → 301 to `/search` (same query).
+
+    Tracking-only parameters (utm_*, ref, fbclid, gclid) stay on the landing
+    page, so a shared link like /?utm_source=reddit shows the landing page.
+    """
     # Relative 301; query taken only from the request URL, never a param.
     query = request.url.query
-    if query:
+    if query and not all(_is_tracking(k) for k in request.query_params.keys()):
         return RedirectResponse(url=f"/search?{query}", status_code=301)
 
     templates = request.app.state.templates

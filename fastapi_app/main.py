@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, PlainTextResponse
@@ -28,6 +29,7 @@ from .security import (
 from .services.metrorail_notes import badge_label
 from .services.trust import get_scraped_at_display, get_scraped_at_raw
 from .services.uct_notes import uct_notes
+from .services.usage import record as record_usage
 
 # Configure logging
 logging.basicConfig(
@@ -89,6 +91,12 @@ templates = Jinja2Templates(env=jinja_env)
 # otherwise a startup timestamp (changes on every restart).
 ASSET_V = (os.environ.get("RENDER_GIT_COMMIT") or "")[:7] or str(int(time.time()))
 jinja_env.globals["asset_v"] = ASSET_V
+# Footer "Report a wrong time" link; hidden until FEEDBACK_EMAIL is set.
+jinja_env.globals["feedback_href"] = (
+    f"mailto:{quote(settings.feedback_email, safe='@')}?subject=Halte%20feedback"
+    if settings.feedback_email
+    else ""
+)
 app.state.asset_v = ASSET_V
 
 
@@ -104,6 +112,14 @@ async def cache_control_headers(request, call_next):
     if request.url.path.startswith("/static/") or ctype.startswith("text/html"):
         response.headers["Cache-Control"] = "no-cache"
     return response
+
+@app.middleware("http")
+async def count_usage(request, call_next):
+    """One anonymous log line per page view (see services/usage.py)."""
+    response = await call_next(request)
+    record_usage(request, response.status_code)
+    return response
+
 
 SECURITY_HEADERS = security_headers(build_csp())
 

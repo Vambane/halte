@@ -20,6 +20,7 @@ import logging
 import re
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 import pdfplumber
@@ -43,6 +44,8 @@ log = logging.getLogger(__name__)
 
 BASE_URL = "https://www.myciti.org.za"
 TIMETABLES_PAGE = f"{BASE_URL}/en/timetables/timetable-downloads/"
+# Every route ever seen; the downloads page sometimes leaves some out.
+KNOWN_ROUTES_FILE = Path(__file__).parent.parent / "data" / "myciti_known_routes.tsv"
 
 HEADERS = {
     "User-Agent": (
@@ -179,6 +182,48 @@ def scrape_route_list(session: requests.Session) -> list[dict]:
 
     log.info(f"Found {len(routes)} routes on timetable downloads page.")
     return routes
+
+
+def load_known_routes(path: Path = KNOWN_ROUTES_FILE) -> dict[str, str]:
+    """route_id -> route_name for every MyCiTi route seen before."""
+    if not path.exists():
+        return {}
+    known = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line or line.startswith("#") or line.startswith("route_id\t"):
+            continue
+        route_id, _, name = line.partition("\t")
+        known[route_id.strip()] = name.strip() or route_id.strip()
+    return known
+
+
+def save_known_routes(known: dict[str, str], path: Path = KNOWN_ROUTES_FILE) -> None:
+    """Rewrite the known-routes file, keeping its header comment."""
+    header = [ln for ln in path.read_text(encoding="utf-8").splitlines() if ln.startswith("#")] \
+        if path.exists() else ["# Every MyCiTi route ever seen (route_id<TAB>route_name)."]
+    rows = [f"{rid}\t{known[rid]}" for rid in sorted(known)]
+    path.write_text("\n".join(header + ["route_id\troute_name"] + rows) + "\n", encoding="utf-8")
+
+
+def add_unlisted_routes(listed: list[dict], known: dict[str, str], now: str) -> list[dict]:
+    """The listed routes plus every known route the downloads page left out.
+
+    Unlisted routes are marked ``unlisted`` so scrape_all can drop any whose
+    PDF has gone (MyCiTi withdrew the route) instead of loading it empty.
+    """
+    seen = {r["route_id"] for r in listed}
+    extra = []
+    for route_id in sorted(set(known) - seen):
+        name = known[route_id]
+        extra.append({
+            "route_id": route_id,
+            "route_name": name,
+            "route_description": name.split(" – ", 1)[-1],
+            "detail_url": f"{BASE_URL}/docs/route-timetables/{route_id}-timetable.pdf",
+            "scraped_at": now,
+            "unlisted": True,
+        })
+    return listed + extra
 
 
 # ---------------------------------------------------------------------------
@@ -454,20 +499,36 @@ def scrape_all() -> dict[str, list[dict]]:
     log.info("=== Starting MyCiTi scrape ===")
 
     # Step 1: get all routes (from timetables page)
-    routes = scrape_route_list(session)
-    if not routes:
+    listed = scrape_route_list(session)
+    if not listed:
         log.error("No routes found. Check that myciti.org.za is reachable.")
         return {"routes": [], "stops": [], "timetables": [], "departures": []}
+
+    # The page is flaky (it has listed 34, 40 and 47 routes), so also try every
+    # route seen before; remember any new ones for next time.
+    known = load_known_routes()
+    for route in listed:
+        known[route["route_id"]] = route["route_name"]
+    save_known_routes(known)
+    routes = add_unlisted_routes(listed, known, listed[0]["scraped_at"])
+    log.info(f"{len(listed)} routes listed on the page, {len(routes) - len(listed)} more known.")
 
     all_stops: list[dict] = []
     all_departures: list[dict] = []
     timetable_meta: list[dict] = []
+    withdrawn: set[str] = set()
 
     # Step 2: download + parse each PDF
     total = len(routes)
     for i, route in enumerate(routes, start=1):
         pdf_url = route["detail_url"]
         log.info(f"[{i}/{total}] {route['route_id']} — {route['route_description']}")
+
+        pdf_bytes = _get_pdf_bytes(pdf_url, session)
+        if pdf_bytes is None and route.get("unlisted"):
+            log.info(f"  {route['route_id']} not listed and PDF gone — route withdrawn.")
+            withdrawn.add(route["route_id"])
+            continue
 
         timetable_meta.append({
             "route_id": route["route_id"],
@@ -477,7 +538,6 @@ def scrape_all() -> dict[str, list[dict]]:
             "scraped_at": route["scraped_at"],
         })
 
-        pdf_bytes = _get_pdf_bytes(pdf_url, session)
         if pdf_bytes is None:
             log.warning(f"  Skipping {route['route_id']} — PDF unavailable.")
             continue
@@ -486,6 +546,10 @@ def scrape_all() -> dict[str, list[dict]]:
         all_stops.extend(stops)
         all_departures.extend(departures)
 
+    routes = [
+        {k: v for k, v in r.items() if k != "unlisted"}
+        for r in routes if r["route_id"] not in withdrawn
+    ]
     log.info(
         f"=== Scrape complete: {len(routes)} routes, "
         f"{len(all_stops)} stops, "

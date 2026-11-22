@@ -4,3 +4,5 @@ pylint>=3.0
 httpx>=0.27
 # Browser tests (tests/test_journey_card_hit.py) and tools/landing_screenshot.py
 playwright>=1.40
+# tools/make_brand_images.py reads the woff2 brand fonts (the woff extra adds brotli)
+fonttools[woff]>=4.50

@@ -89,3 +89,21 @@ def uct_expiry_state(conn, today: Optional[date] = None) -> tuple[set[str], Opti
 def drop_expired(route_ids: Iterable[str], expired: set[str]) -> bool:
     """True if none of the given routes is expired (row may be shown)."""
     return not any(r in expired for r in (route_ids or []))
+
+
+def serves_uct(conn, stop_names: Iterable[Optional[str]]) -> bool:
+    """True when any of the given stops is a UCT shuttle stop.
+
+    With every network selected, the "UCT timetable expired" banner is only
+    worth showing when the search or board involves a UCT stop; MyCiTi and
+    Metrorail riders don't need it (UCT is on holiday for months at a time).
+    """
+    names = [n for n in stop_names if n]
+    if not names:
+        return False
+    placeholders = ", ".join("?" * len(names))
+    row = conn.execute(
+        f"SELECT 1 FROM stops WHERE operator = 'uct' AND stop_name IN ({placeholders}) LIMIT 1",
+        names,
+    ).fetchone()
+    return row is not None
