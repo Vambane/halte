@@ -2,11 +2,12 @@
 import logging
 import os
 import time
+from datetime import datetime, timedelta, timezone
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from jinja2 import Environment, FileSystemLoader
@@ -16,7 +17,14 @@ from journey import clock_time
 from .config import settings
 from .dependencies import close_connection_pool, get_connection, init_connection_pool, is_pool_ready
 from .routes import api, journey, landing, search, stop, system_map
-from .security import HSTS_VALUE, build_csp, is_https, security_headers
+from .security import (
+    HSTS_VALUE,
+    build_csp,
+    is_https,
+    host_refused,
+    resolve_allowed_hosts,
+    security_headers,
+)
 from .services.metrorail_notes import badge_label
 from .services.trust import get_scraped_at_display, get_scraped_at_raw
 from .services.uct_notes import uct_notes
@@ -49,6 +57,8 @@ app = FastAPI(
     description="Journey planning and timetable system for MyCiTi buses in Cape Town",
     version=APP_VERSION,
     lifespan=lifespan,
+    # Never serve tracebacks to visitors, whatever the environment says.
+    debug=False,
     # Interactive API docs are off in production (they list every endpoint
     # and parameter). Set ENABLE_DOCS=true locally to get /docs back.
     docs_url="/docs" if settings.enable_docs else None,
@@ -97,11 +107,18 @@ async def cache_control_headers(request, call_next):
 
 SECURITY_HEADERS = security_headers(build_csp())
 
+# Host allowlist, read from settings once; kept on app.state so tests can vary it.
+app.state.allowed_hosts = resolve_allowed_hosts(settings.allowed_hosts)
+
 
 @app.middleware("http")
 async def add_security_headers(request, call_next):
-    """CSP, anti-framing, nosniff and friends on every response (see security.py)."""
-    response = await call_next(request)
+    """Host allowlist, then CSP, anti-framing, nosniff and friends (see security.py)."""
+    if host_refused(request, app.state.allowed_hosts):
+        logger.info("Refused request for host %r", request.headers.get("host"))
+        response = PlainTextResponse("Forbidden", status_code=403)
+    else:
+        response = await call_next(request)
     for name, value in SECURITY_HEADERS.items():
         response.headers.setdefault(name, value)
     if is_https(request):
@@ -119,6 +136,19 @@ app.include_router(search.router, tags=["Search"])
 app.include_router(stop.router, tags=["Stop"])
 app.include_router(system_map.router, tags=["Map"])
 app.include_router(journey.router, tags=["Journey"])
+
+
+@app.get("/.well-known/security.txt", response_class=PlainTextResponse)
+async def security_txt():
+    """RFC 9116 security contact. Expires rolls forward so it never goes stale."""
+    expires = (datetime.now(timezone.utc) + timedelta(days=180)).replace(microsecond=0)
+    return "\n".join([
+        f"Contact: {settings.security_contact}",
+        f"Expires: {expires.strftime('%Y-%m-%dT%H:%M:%SZ')}",
+        "Preferred-Languages: en",
+        "Canonical: https://halte.co.za/.well-known/security.txt",
+        "",
+    ])
 
 
 @app.get("/health")

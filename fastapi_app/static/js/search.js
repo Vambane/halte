@@ -11,6 +11,31 @@
   var HISTORY_KEY = 'myciti_search_history';
   var LEGACY_KEY  = 'myciti_last_search';
   var MAX_HISTORY = 5;
+  var MAX_STOP_LEN = 120;             /* same cap as the server (journey_page) */
+  var DAY_TYPES = ['weekday', 'saturday', 'sunday'];
+
+  /* localStorage is writable by anything that runs on this origin and by the
+     person at the keyboard, so every entry is checked before it is used:
+     two non-empty stop names of sane length and a known day type. */
+  function cleanEntry(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var from = raw.from_stop, to = raw.to_stop;
+    if (typeof from !== 'string' || typeof to !== 'string') return null;
+    from = from.trim(); to = to.trim();
+    if (!from || !to || from.length > MAX_STOP_LEN || to.length > MAX_STOP_LEN) return null;
+    var day = DAY_TYPES.indexOf(raw.day_type) !== -1 ? raw.day_type : 'weekday';
+    return { from_stop: from, to_stop: to, day_type: day };
+  }
+
+  function cleanHistory(list) {
+    if (!Array.isArray(list)) return [];
+    var out = [];
+    for (var i = 0; i < list.length && out.length < MAX_HISTORY; i++) {
+      var entry = cleanEntry(list[i]);
+      if (entry) out.push(entry);
+    }
+    return out;
+  }
 
   /* ---- Swap button rotation ---- */
   var swapBtn = document.getElementById('swap-btn');
@@ -25,14 +50,13 @@
   function loadHistory() {
     try {
       var raw = localStorage.getItem(HISTORY_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) return cleanHistory(JSON.parse(raw));
 
       /* Migrate legacy single-search format */
       var legacy = localStorage.getItem(LEGACY_KEY);
       if (legacy) {
-        var obj = JSON.parse(legacy);
-        if (obj && obj.from_stop && obj.to_stop) {
-          var migrated = [obj];
+        var migrated = cleanHistory([JSON.parse(legacy)]);
+        if (migrated.length) {
           localStorage.setItem(HISTORY_KEY, JSON.stringify(migrated));
           localStorage.removeItem(LEGACY_KEY);
           return migrated;
@@ -54,8 +78,10 @@
     history = history.filter(function (h) {
       return !(h.from_stop === from && h.to_stop === to);
     });
-    /* Add to front */
-    history.unshift({ from_stop: from, to_stop: to, day_type: dayType });
+    /* Add to front (only if it is a valid entry) */
+    var entry = cleanEntry({ from_stop: from, to_stop: to, day_type: dayType });
+    if (!entry) return;
+    history.unshift(entry);
     /* Cap at MAX_HISTORY */
     if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
     saveHistory(history);
@@ -74,12 +100,16 @@
 
     var history = loadHistory();
     if (history.length === 0) {
-      container.style.display = 'none';
+      container.hidden = true;
       return;
     }
 
-    container.innerHTML = '<span class="recent-label">Recent</span>';
-    container.style.display = '';
+    /* Built with DOM methods and textContent, never from HTML strings. */
+    var label = document.createElement('span');
+    label.className = 'recent-label';
+    label.textContent = 'Recent';
+    container.replaceChildren(label);
+    container.hidden = false;
 
     history.forEach(function (item, i) {
       var chip = document.createElement('a');
@@ -96,7 +126,7 @@
       close.className = 'recent-chip-close';
       close.type = 'button';
       close.setAttribute('aria-label', 'Remove from history');
-      close.innerHTML = '&times;';
+      close.textContent = '\u00d7';
       close.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -127,7 +157,7 @@
             var stillValid = stops.indexOf(currentVal) !== -1;
 
             /* Rebuild <li> options */
-            list.innerHTML = '';
+            list.replaceChildren();
             stops.forEach(function (stop) {
               var li = document.createElement('li');
               li.className = 'combobox-option';
@@ -139,7 +169,7 @@
             });
 
             /* Rebuild native <select> options */
-            native.innerHTML = '';
+            native.replaceChildren();
             var placeholder = document.createElement('option');
             placeholder.value = '';
             placeholder.textContent = 'Select a stop...';
@@ -196,6 +226,7 @@
       if (fromInput) fromInput.value = saved.from_stop;
       if (toInput)   toInput.value   = saved.to_stop;
 
+      /* day_type is one of DAY_TYPES (cleanEntry), so it is safe in a selector. */
       var radio = form.querySelector('[name="day_type"][value="' + saved.day_type + '"]');
       if (radio) radio.checked = true;
     }

@@ -76,7 +76,9 @@ def test_map_hash_follows_file_contents(tmp_path):
 def test_hsts_only_over_https(client):
     assert "strict-transport-security" not in client.get("/health").headers
     r = client.get("/health", headers={"X-Forwarded-Proto": "https"})
-    assert r.headers["strict-transport-security"].startswith("max-age=63072000")
+    assert r.headers["strict-transport-security"] == (
+        "max-age=31536000; includeSubDomains; preload"
+    )
 
 
 @pytest.mark.parametrize("path", ["/docs", "/redoc", "/openapi.json"])

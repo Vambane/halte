@@ -30,10 +30,12 @@
   .rid     { flex:0 0 34px; font-weight:700; }
   #style-toggle { position:absolute; top:10px; left:54px; z-index:1000;
                   background:#111111; border-radius:8px; overflow:hidden;
-                  box-shadow:0 2px 12px rgba(0,0,0,.45); display:flex;
+                  box-shadow:0 2px 12px rgba(0,0,0,.45); display:none;
                   border:1px solid rgba(255,255,255,.08); }
   #style-toggle button { border:none; padding:7px 12px; font-size:12px;
                          cursor:pointer; background:#111111; color:#F0F0F0; }
+  .tip-routes { color:#0072BC; }
+  .tip-hint   { color:#888; }
   #style-toggle button.on { background:#FFE17C; color:#0A0A0A; font-weight:700; }
   #hint    { position:absolute; left:10px; bottom:10px; color:#A0A0A8;
              font-size:11px; background:rgba(17,17,17,.9);
@@ -86,7 +88,7 @@
 <div id="wrap">
   <div id="map"></div>
   <div id="loading">Loading network map...</div>
-  <div id="style-toggle" style="display:none;">
+  <div id="style-toggle">
     <button id="btn-schematic" class="on">Schematic</button>
     <button id="btn-street">Street</button>
   </div>
@@ -288,9 +290,9 @@ function initMap(graph) {
     m._node = n;
     m._halo = halo;
     const tipHtml =
-      `<b>${escapeHtml(n.id)}</b><br><span style="color:#0072BC">` +
+      `<b>${escapeHtml(n.id)}</b><br><span class="tip-routes">` +
       `${n.routes.map(escapeHtml).join(" · ")}</span>` +
-      `<br><span style="color:#888">Tap for timetable</span>`;
+      `<br><span class="tip-hint">Tap for timetable</span>`;
     m.bindTooltip(tipHtml, { direction: "top", offset: [0, -6], sticky: false });
     if (n.n >= 6) {
       L.tooltip({

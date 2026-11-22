@@ -110,7 +110,7 @@
         <div class="card mb-2 departure-card" data-route-id="{{ data.route.route_id }}">
             <!-- Route header -->
             <div class="card-header">
-                <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="u-row-4">
                     <span class="route-badge {% if data.route.route_id.startswith('UCT') %}uct{% elif data.route.route_id.startswith('MR-') %}rail{% elif data.route.route_id.startswith('T') %}trunk{% elif data.route.route_id.startswith('D') %}direct{% else %}area{% endif %}">
                         {{ data.route.route_name }}
                     </span>
@@ -133,7 +133,7 @@
 
             <!-- Upcoming departures list -->
             <div class="card-body">
-                <h4 style="margin-bottom: 1rem;">Upcoming Departures</h4>
+                <h4 class="u-mb-1rem">Upcoming Departures</h4>
                 <ul class="departure-list">
                     {% for departure in data.upcoming %}
                     <li class="departure-item">
