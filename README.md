@@ -227,6 +227,19 @@ uvicorn fastapi_app.main:app --host 0.0.0.0 --port $PORT
 
 On a cold start Halte rebuilds `data/myciti.duckdb` from the snapshot if it's missing. It never scrapes on boot, and a missing snapshot fails loudly rather than serving empty boards. A **Render** Blueprint (`render.yaml`) is included for a free web service; free instances nap when idle, so the first visit after a quiet spell is a bit slow. Full details in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
+### Cloudflare rules 🛡️
+
+halte.co.za sits behind Cloudflare, in front of Render. Two Transform Rules live in the Cloudflare dashboard (halte.co.za → Rules → Transform Rules), not in this repo:
+
+| Rule | Type | Matches | Does |
+|---|---|---|---|
+| **Hide hosting headers** | Modify Response Header | All incoming requests | **Remove** `x-render-origin-server`; **Remove** `rndr-id` |
+| **Halte origin secret** | Modify Request Header | All incoming requests | **Set static** `X-Halte-Origin` = the `ORIGIN_SECRET` value on Render |
+
+Cloudflare doesn't let a rule change its own `Server: cloudflare` header, so that one stays (it only says Cloudflare, which DNS shows anyway). The uvicorn `Server` header is turned off on Render with `UVICORN_SERVER_HEADER=false`. The origin-secret rule must go live **before** `ORIGIN_SECRET` is set on Render; the order and the check are in [`SECURITY.md`](SECURITY.md).
+
+Check the live site any time with `tools/check_live_security.sh`.
+
 ## Project map 🗂️
 
 ```

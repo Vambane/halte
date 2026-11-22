@@ -15,6 +15,17 @@ class Settings(BaseSettings):
     reload: bool = False
     enable_docs: bool = False  # /docs, /redoc, /openapi.json (local dev only)
 
+    # Origin lock (see fastapi_app/security.py).
+    # Comma-separated Host names the app answers. Empty = any host, except on
+    # Render (RENDER is set there), where it defaults to the public domain.
+    allowed_hosts: str = ""
+    # Shared secret Cloudflare adds as the X-Halte-Origin request header.
+    # Empty = not enforced. Set it only after the Cloudflare rule is live.
+    origin_secret: str = ""
+
+    # /.well-known/security.txt
+    security_contact: str = "mailto:security@halte.co.za"
+
     # Database
     db_path: str = str(Path(__file__).parent.parent / "data" / "myciti.duckdb")
 
