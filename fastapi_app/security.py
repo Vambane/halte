@@ -128,8 +128,9 @@ def is_https(request) -> bool:
     return proto.split(",")[0].strip().lower() == "https"
 
 
-def resolve_allowed_hosts(configured: str, environ=os.environ) -> frozenset[str]:
+def resolve_allowed_hosts(configured: str, environ=None) -> frozenset[str]:
     """Host names to accept. Empty set means any host (local dev, tests, CI)."""
+    environ = os.environ if environ is None else environ
     names = [h.strip().lower() for h in configured.split(",") if h.strip()]
     if not names and environ.get("RENDER"):
         names = list(PUBLIC_HOSTS)

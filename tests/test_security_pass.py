@@ -169,7 +169,8 @@ def test_7_security_txt(client):
     assert r.headers["content-type"].startswith("text/plain")
     fields = dict(line.split(": ", 1) for line in r.text.strip().splitlines())
     assert fields["Contact"].startswith(("mailto:", "https://"))
-    expires = datetime.strptime(fields["Expires"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    expires = datetime.strptime(fields["Expires"], "%Y-%m-%dT%H:%M:%SZ")
+    expires = expires.replace(tzinfo=timezone.utc)
     days = (expires - datetime.now(timezone.utc)).days
     assert 0 < days <= 366  # RFC 9116: in the future, under a year out
     assert fields["Canonical"] == "https://halte.co.za/.well-known/security.txt"
