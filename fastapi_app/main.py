@@ -21,7 +21,7 @@ from .security import (
     HSTS_VALUE,
     build_csp,
     is_https,
-    origin_refusal,
+    host_refused,
     resolve_allowed_hosts,
     security_headers,
 )
@@ -107,17 +107,15 @@ async def cache_control_headers(request, call_next):
 
 SECURITY_HEADERS = security_headers(build_csp())
 
-# Origin lock, read from settings once; kept on app.state so tests can vary it.
+# Host allowlist, read from settings once; kept on app.state so tests can vary it.
 app.state.allowed_hosts = resolve_allowed_hosts(settings.allowed_hosts)
-app.state.origin_secret = settings.origin_secret
 
 
 @app.middleware("http")
 async def add_security_headers(request, call_next):
-    """Origin lock, then CSP, anti-framing, nosniff and friends (see security.py)."""
-    refusal = origin_refusal(request, app.state.allowed_hosts, app.state.origin_secret)
-    if refusal:
-        logger.info("Refused request (%s check) for host %r", refusal, request.headers.get("host"))
+    """Host allowlist, then CSP, anti-framing, nosniff and friends (see security.py)."""
+    if host_refused(request, app.state.allowed_hosts):
+        logger.info("Refused request for host %r", request.headers.get("host"))
         response = PlainTextResponse("Forbidden", status_code=403)
     else:
         response = await call_next(request)

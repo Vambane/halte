@@ -2,8 +2,8 @@
 
 Halte has no login yet, so the main risks are a page being framed by
 another site (clickjacking), injected script or style running in our origin,
-browsers guessing content types, and people reaching the Render origin
-directly instead of through Cloudflare. This module closes those off.
+browsers guessing content types, and the site being served under the
+default *.onrender.com address. This module closes those off.
 
 Content-Security-Policy
     Scripts and styles load only from this origin, plus Leaflet from unpkg
@@ -20,22 +20,18 @@ Framing
     ``frame-ancestors 'self'`` plus ``X-Frame-Options: SAMEORIGIN`` (for old
     browsers). Same-origin, not "none", because /map embeds the map page.
 
-Origin lock
-    Render's edge sits behind its own Cloudflare, so a request can reach the
-    Render service without passing through halte.co.za's Cloudflare zone.
-    Two checks, both skipped for /health so Render's health checks work:
-
-    * Host allowlist: only halte.co.za and www.halte.co.za on Render. This
-      stops the default *.onrender.com address serving the site.
-    * Origin secret: when ORIGIN_SECRET is set, every request must carry it
-      in the X-Halte-Origin header, which a Cloudflare request-header
-      Transform Rule adds. A Host header can be faked; the secret cannot.
+Host allowlist
+    halte.co.za's DNS (GoDaddy) points straight at Render; there is no CDN of
+    our own in front. Render also serves every service on a default
+    *.onrender.com address. On Render the app answers only halte.co.za and
+    www.halte.co.za and refuses other Host names with 403, so that second
+    address stops serving the site. /health is exempt so Render's own
+    health checks keep working.
 """
 from __future__ import annotations
 
 import base64
 import hashlib
-import hmac
 import os
 import re
 from pathlib import Path
@@ -51,9 +47,8 @@ OSM_TILES = "https://tile.openstreetmap.org"
 HSTS_VALUE = "max-age=31536000; includeSubDomains; preload"
 
 PUBLIC_HOSTS = ("halte.co.za", "www.halte.co.za")
-ORIGIN_HEADER = "x-halte-origin"
-# Paths that skip the origin lock: Render's own health checks reach the
-# service directly, without Cloudflare's header or the public Host name.
+# Paths that skip the Host check: Render's own health checks reach the
+# service without the public Host name.
 UNLOCKED_PATHS = frozenset({"/health"})
 
 _INLINE = {
@@ -126,7 +121,7 @@ def security_headers(csp: str) -> dict[str, str]:
 def is_https(request) -> bool:
     """True when the browser reached us over HTTPS.
 
-    Render and Cloudflare terminate TLS, so the app itself sees plain HTTP;
+    Render's edge terminates TLS, so the app itself sees plain HTTP;
     the proxy's X-Forwarded-Proto says what the browser used.
     """
     proto = request.headers.get("x-forwarded-proto", request.url.scheme)
@@ -149,14 +144,8 @@ def _host_name(host_header: str) -> str:
     return host.rsplit(":", 1)[0] if ":" in host else host
 
 
-def origin_refusal(request, allowed_hosts: frozenset[str], origin_secret: str) -> str | None:
-    """Why this request must be refused with 403, or None to let it through."""
-    if request.url.path in UNLOCKED_PATHS:
-        return None
-    if allowed_hosts and _host_name(request.headers.get("host", "")) not in allowed_hosts:
-        return "host"
-    if origin_secret:
-        sent = request.headers.get(ORIGIN_HEADER, "")
-        if not hmac.compare_digest(sent.encode(), origin_secret.encode()):
-            return "origin"
-    return None
+def host_refused(request, allowed_hosts: frozenset[str]) -> bool:
+    """True when the request's Host is not one we serve (answer 403)."""
+    if not allowed_hosts or request.url.path in UNLOCKED_PATHS:
+        return False
+    return _host_name(request.headers.get("host", "")) not in allowed_hosts

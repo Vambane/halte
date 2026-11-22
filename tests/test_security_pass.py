@@ -1,4 +1,4 @@
-"""November 2026 hardening pass: origin lock, strict CSP, HSTS preload,
+"""November 2026 hardening pass: Host allowlist, strict CSP, HSTS preload,
 hidden files, security.txt, recent-search hygiene and the no-POST guard.
 
 Each test names the item it covers. Live equivalents: tools/check_live_security.sh.
@@ -23,7 +23,6 @@ from fastapi_app.security import (
 REPO = Path(__file__).resolve().parents[1]
 TEMPLATES = REPO / "fastapi_app" / "templates"
 STATIC_JS = REPO / "fastapi_app" / "static" / "js"
-SECRET = "test-origin-secret-1234567890"
 
 
 @pytest.fixture(scope="module")
@@ -36,13 +35,12 @@ def client():
 
 @pytest.fixture
 def locked(client):
-    """The app as it runs on Render with the origin secret switched on."""
+    """The app as it runs on Render: public host names only."""
     app = client.app
-    before = (app.state.allowed_hosts, app.state.origin_secret)
+    before = app.state.allowed_hosts
     app.state.allowed_hosts = frozenset(PUBLIC_HOSTS)
-    app.state.origin_secret = SECRET
     yield client
-    app.state.allowed_hosts, app.state.origin_secret = before
+    app.state.allowed_hosts = before
 
 
 def _csp_directive(csp: str, name: str) -> list[str]:
@@ -50,7 +48,7 @@ def _csp_directive(csp: str, name: str) -> list[str]:
     return match.group(1).split() if match else []
 
 
-# --- 1. Origin lock -----------------------------------------------------------
+# --- 1. Host allowlist -----------------------------------------------------------
 
 def test_1_render_defaults_to_public_hosts_only():
     assert resolve_allowed_hosts("", {"RENDER": "true"}) == frozenset(PUBLIC_HOSTS)
@@ -60,22 +58,14 @@ def test_1_render_defaults_to_public_hosts_only():
 
 @pytest.mark.parametrize("host", ["myciti-bus-timetable.onrender.com", "evil.example", ""])
 def test_1_other_hosts_get_403(locked, host):
-    r = locked.get("/", headers={"host": host, "x-halte-origin": SECRET})
+    r = locked.get("/", headers={"host": host})
     assert r.status_code == 403
     assert r.headers["x-frame-options"] == "SAMEORIGIN"  # still has security headers
 
 
 @pytest.mark.parametrize("host", ["halte.co.za", "www.halte.co.za", "HALTE.co.za:443"])
-def test_1_public_hosts_with_secret_pass(locked, host):
-    assert locked.get("/", headers={"host": host, "x-halte-origin": SECRET}).status_code == 200
-
-
-@pytest.mark.parametrize("sent", [None, "", "wrong", SECRET + "x"])
-def test_1_right_host_without_cloudflare_secret_gets_403(locked, sent):
-    headers = {"host": "halte.co.za"}
-    if sent is not None:
-        headers["x-halte-origin"] = sent
-    assert locked.get("/", headers=headers).status_code == 403
+def test_1_public_hosts_pass(locked, host):
+    assert locked.get("/", headers={"host": host}).status_code == 200
 
 
 def test_1_health_skips_the_lock_for_render_checks(locked):

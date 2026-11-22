@@ -4,7 +4,6 @@
 # Read-only GET requests. Exits non-zero if any check fails.
 set -u
 BASE="${1:-https://halte.co.za}"
-HOST="${BASE#https://}"; HOST="${HOST%%/*}"
 ORIGIN="${ORIGIN:-myciti-bus-timetable.onrender.com}"
 fails=0
 pass() { printf '  \033[32mPASS\033[0m %s\n' "$1"; }
@@ -16,16 +15,16 @@ H=$(curl -sS -o /dev/null -D - --max-time 30 "$BASE/" | tr -d '\r')
 hdr() { printf '%s\n' "$H" | grep -i "^$1:" | head -1 | cut -d' ' -f2-; }
 CSP=$(hdr content-security-policy)
 
-echo "1. Origin lock"
+echo "1. Host allowlist"
 check "default onrender.com address refused (403)" '[ "$(code "https://$ORIGIN/")" = 403 ]'
-check "Host spoofed straight to Render's edge refused (needs ORIGIN_SECRET + Cloudflare rule)" \
-  '[ "$(code --connect-to "$HOST:443:$ORIGIN:443" "$BASE/")" = 403 ]'
 check "site itself still 200" '[ "$(code "$BASE/")" = 200 ]'
+check "/health still 200 on the onrender.com address (Render health checks)" \
+  '[ "$(code "https://$ORIGIN/health")" = 200 ]'
 
-echo "2. Hosting headers stripped (Cloudflare Transform Rule)"
-check "no x-render-origin-server" '[ -z "$(hdr x-render-origin-server)" ]'
-check "no rndr-id" '[ -z "$(hdr rndr-id)" ]'
-check "server is only cloudflare (no uvicorn)" '[ "$(hdr server)" = cloudflare ]'
+echo "2. Server banner"
+# x-render-origin-server and rndr-id come from Render's edge and stay (see SECURITY.md).
+check "no uvicorn in any server header" \
+  '! printf "%s\n" "$H" | grep -iE "^(server|x-render-origin-server):" | grep -qi uvicorn'
 
 echo "3. Content-Security-Policy"
 check "no 'unsafe-inline'" '! grep -q "unsafe-inline" <<<"$CSP"'

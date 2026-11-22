@@ -14,8 +14,8 @@ for a vulnerability.
 | No `style=""` attributes in templates (route colours go through `data-route-color` + `static/js/route-colors.js`) | templates | `tests/test_security_pass.py` |
 | X-Frame-Options `SAMEORIGIN`, nosniff, Referrer-Policy, Permissions-Policy, COOP/CORP | `fastapi_app/security.py` | `tests/test_security_headers.py` |
 | HSTS `max-age=31536000; includeSubDomains; preload` (HTTPS only) | `fastapi_app/security.py` | `tests/test_security_pass.py` |
-| Host allowlist: on Render only `halte.co.za` / `www.halte.co.za`, else 403 | `ALLOWED_HOSTS` | `tests/test_security_pass.py` |
-| Origin secret: 403 unless Cloudflare's `X-Halte-Origin` header matches | `ORIGIN_SECRET` | `tests/test_security_pass.py` |
+| Host allowlist: on Render only `halte.co.za` / `www.halte.co.za`, else 403 (shuts the `*.onrender.com` address) | `ALLOWED_HOSTS` | `tests/test_security_pass.py` |
+| uvicorn `Server` banner off | `UVICORN_SERVER_HEADER=false` on Render | `tools/check_live_security.sh` |
 | `/docs`, `/redoc`, `/openapi.json`, `/.env`, `/.git`, `render.yaml`, `Dockerfile`, `requirements.txt` all 404; `debug=False` | `fastapi_app/main.py` | `tests/test_security_pass.py` |
 | Stop and search input cannot forge log lines | routes | `tests/test_log_forging.py` |
 | Recent searches from `localStorage` are validated, length-limited and rendered with `textContent` | `static/js/search.js` | `tests/test_security_pass.py` |
@@ -23,29 +23,20 @@ for a vulnerability.
 
 Live checks against halte.co.za: `tools/check_live_security.sh`.
 
-## Locking the origin (Render behind Cloudflare)
+## Hosting
 
-Render's edge is itself behind Cloudflare, so a request can reach the Render service
-without passing through the halte.co.za Cloudflare zone, for example by sending
-`Host: halte.co.za` straight to Render's edge. Restricting the Render service to
-Cloudflare IP ranges is not reliable here, because Render sees the visitor's own IP
-rather than a Cloudflare one. Two checks in the app close this off instead:
+halte.co.za's DNS is at GoDaddy and points straight at Render. Render's edge (which runs
+on Cloudflare) terminates TLS, redirects `www` and adds `x-render-origin-server` and
+`rndr-id` to every response; those only say the site is on Render and can't be removed
+without a CDN of our own in front.
 
-1. **Host allowlist** (`ALLOWED_HOSTS`, default on Render: `halte.co.za,www.halte.co.za`).
-   Stops `*.onrender.com` serving the site. A Host header can be faked, so this alone is
-   not enough.
-2. **Origin secret** (`ORIGIN_SECRET`). Cloudflare adds a secret request header that
-   direct visitors cannot know. Turn it on in this order, or the site goes down:
-   1. Cloudflare → halte.co.za → Rules → Transform Rules → **Modify Request Header** →
-      rule "Halte origin secret", *All incoming requests*, **Set static**
-      `X-Halte-Origin` = a long random value (`python3 -c "import secrets; print(secrets.token_urlsafe(32))"`).
-   2. Render → service `myciti-bus-timetable` → Environment → `ORIGIN_SECRET` = the same
-      value. Render redeploys.
-   3. Check: `curl -s -o /dev/null -w "%{http_code}" --connect-to halte.co.za:443:myciti-bus-timetable.onrender.com:443 https://halte.co.za/`
-      returns `403`, while `https://halte.co.za/` still returns `200`.
+Render also serves every service on a default `*.onrender.com` address. The Host
+allowlist (`ALLOWED_HOSTS`, default on Render: `halte.co.za,www.halte.co.za`) answers
+that address with 403. `/health` is exempt so Render's health checks keep working.
 
-   To rotate: change the Cloudflare value and the Render variable together.
-   `/health` skips both checks so Render's own health checks keep working.
+If a CDN of our own is ever put in front (for example moving the nameservers to
+Cloudflare), add an origin check too: a secret request header set by the CDN and verified
+by the app, so the Render address can't be used to skip the CDN's rules.
 
 ## Before shipping login or signup
 
@@ -59,8 +50,8 @@ guard, every item below must be done and tested:
   rotate the ID on login; real logout that invalidates the session server-side.
 - **CSRF tokens** on every POST form (the CSP's `form-action 'self'` is not a substitute).
 - **Rate limits** on login, signup and password reset, per IP and per account, with
-  backoff. Behind Cloudflare, take the client IP from `CF-Connecting-IP` only once the
-  origin secret is enforced; otherwise it can be faked.
+  backoff. Take the client IP from what Render's proxy appends to `X-Forwarded-For`
+  (the last entry), never the first entry, which the browser can set to anything.
 - **Same generic error** for an unknown email and a wrong password ("Email or password is
   incorrect"), and the same response time for both. Password reset always says "If that
   address has an account, we've sent a link".
