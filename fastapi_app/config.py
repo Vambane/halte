@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     reload: bool = False
     enable_docs: bool = False  # /docs, /redoc, /openapi.json (local dev only)
+    # "Report a wrong time" link in the footer; hidden until this is set.
+    feedback_email: str = ""
 
     # Database
     db_path: str = str(Path(__file__).parent.parent / "data" / "myciti.duckdb")

@@ -8,6 +8,7 @@
   <meta property="og:title" content="Halte">
   <meta property="og:description" content="Halte: MyCiTi, UCT Jammie shuttle and Metrorail timetables and journey planning for Cape Town">
   <title>Halte</title>
+{% include 'components/head_meta.html' %}
   <link rel="stylesheet" href="/static/css/tokens.css?v={{ asset_v }}">
   <link rel="stylesheet" href="/static/css/landing.css?v={{ asset_v }}">
   <link rel="stylesheet" href="/static/css/ios.css?v={{ asset_v }}">
@@ -229,6 +230,9 @@
           <li><a href="/search">Search</a></li>
           <li><a href="/map">Map</a></li>
           <li><a href="#how">How it works</a></li>
+          {%- if feedback_href %}
+          <li><a href="{{ feedback_href }}">Send feedback</a></li>
+          {%- endif %}
         </ul>
       </div>
       <div>

@@ -45,7 +45,8 @@ Cold start must **not** run a full PDF ETL. The process rebuilds DuckDB from com
 1. https://render.com → New → Web Service → connect the GitHub repo  
 2. Confirm start: `uvicorn fastapi_app.main:app --host 0.0.0.0 --port $PORT --no-server-header`  
 3. Free tier spins down after idle — first request is a cold start; `/health` and the Jinja shell (honest wake banner) should respond without a blank page once the process is up  
-4. Optional: `ESP_API_KEY`. `ENABLE_DOCS=true` turns /docs, /redoc and /openapi.json back on (off by default).
+4. Optional: `ESP_API_KEY`. `ENABLE_DOCS=true` turns /docs, /redoc and /openapi.json back on (off by default).  
+5. Optional: `FEEDBACK_EMAIL` shows a "Report a wrong time" link in the footer (hidden until set).
    If the service was created in the dashboard rather than from `render.yaml`, update its start command there too
 
 ---

@@ -23,7 +23,7 @@ from fastapi_app.services.service_day import (
     overnight_carryover,
 )
 from fastapi_app.services.trust import trust_context
-from fastapi_app.services.uct_validity import uct_expiry_state
+from fastapi_app.services.uct_validity import serves_uct, uct_expiry_state
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +166,8 @@ def stop_view(
         uct_stale_warning = None
         if operator in ("uct", "both"):
             expired_uct, uct_stale_warning = uct_expiry_state(conn)
+            if operator == "both" and not serves_uct(conn, [stop_name]):
+                uct_stale_warning = None  # expired routes stay hidden; no banner
 
         # Metrorail: say why trains are missing (Sunday/holiday) or may be stale
         rail_notice = None
