@@ -11,6 +11,10 @@ services:
         sync: false  # Set manually in Render dashboard
       - key: PYTHON_VERSION
         value: 3.11
+      # Hides uvicorn's Server banner even when the dashboard start command
+      # lacks --no-server-header (the live service was not made from this file).
+      - key: UVICORN_SERVER_HEADER
+        value: "false"
     healthCheckPath: /health  # fast; non-200 until the DuckDB pool is ready
     autoDeploy: true
 

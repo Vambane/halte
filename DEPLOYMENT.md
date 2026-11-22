@@ -45,7 +45,8 @@ Cold start must **not** run a full PDF ETL. The process rebuilds DuckDB from com
 1. https://render.com → New → Web Service → connect the GitHub repo  
 2. Confirm start: `uvicorn fastapi_app.main:app --host 0.0.0.0 --port $PORT --no-server-header`  
 3. Free tier spins down after idle — first request is a cold start; `/health` and the Jinja shell (honest wake banner) should respond without a blank page once the process is up  
-4. Optional: `ESP_API_KEY`. `ENABLE_DOCS=true` turns /docs, /redoc and /openapi.json back on (off by default).
+4. Set `UVICORN_SERVER_HEADER=false`. It hides the `Server: uvicorn` banner even if the dashboard start command lacks `--no-server-header` (the live service's command is set in the dashboard, not from `render.yaml`).  
+5. Optional: `ESP_API_KEY`. `ENABLE_DOCS=true` turns /docs, /redoc and /openapi.json back on (off by default).
    If the service was created in the dashboard rather than from `render.yaml`, update its start command there too
 
 ---
